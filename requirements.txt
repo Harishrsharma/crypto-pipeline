@@ -1,0 +1,6 @@
+pandas
+requests
+sqlalchemy
+ipykernel
+python-dotenv
+psycopg2-binary # PostgreSQL adapter for Python
