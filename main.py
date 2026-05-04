@@ -1,32 +1,35 @@
 import time
 import os
-from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from extract import fetch_crypto_data
 from transform import clean_and_analyze
 
-load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
+
 engine = create_engine(os.getenv("DB_URL"))
 
-def run_pipeline():
-    print("🚀 Starting Pipeline Cycle...")
-    
-    # Task 1: Extract
-    coins = ["bitcoin", "ethereum", "solana"]
-    df_raw = fetch_crypto_data(coins)
-    df_raw.to_sql("crypto_prices", engine, if_exists="append", index=False)
-    print("✅ Extraction Complete")
-
-    # Task 2: Transform
-    status = clean_and_analyze(engine)
-    print(f"✅ Transformation Complete: {status}")
+def get_last_silver_date():
+    try:
+        with engine.connect() as conn:
+            res = conn.execute(text("SELECT MAX(extracted_at) FROM crypto_silver")).scalar()
+            return res if res else "1900-01-01"
+    except:
+        return "1900-01-01"
 
 if __name__ == "__main__":
     while True:
         try:
-            run_pipeline()
+            # 1. Extract
+            raw_df = fetch_crypto_data(["bitcoin", "ethereum"])
+            raw_df.to_sql("crypto_prices", engine, if_exists="append", index=False)
+            
+            # 2. Transform
+            last_date = get_last_silver_date()
+            result = clean_and_analyze(engine, last_date)
+            print(f"Cycle Complete: {result}")
+            
         except Exception as e:
-            print(f"❌ Pipeline Error: {e}")
-        
-        print("⏳ Waiting 5 minutes...")
-        time.sleep(300)
+            print(f"Error: {e}")
+            
+        time.sleep(300) # 5 minute heartbeat

@@ -2,9 +2,9 @@ import requests
 import pandas as pd
 from datetime import datetime
 
-def fetch_crypto_data(coin_list, currency="usd"):
+def fetch_crypto_data(coin_list):
     url = "https://api.coingecko.com/api/v3/simple/price"
-    params = {"ids": ",".join(coin_list), "vs_currencies": currency}
+    params = {"ids": ",".join(coin_list), "vs_currencies": "usd"}
     
     response = requests.get(url, params=params, timeout=10)
     response.raise_for_status()
@@ -14,9 +14,7 @@ def fetch_crypto_data(coin_list, currency="usd"):
     for coin in coin_list:
         rows.append({
             "coin_name": coin,
-            "price": data[coin][currency],
-            "extracted_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "price": data[coin]["usd"],
+            "extracted_at": datetime.now() # Store as datetime object
         })
-    
-    # Return the result so main.py can catch it
     return pd.DataFrame(rows)
